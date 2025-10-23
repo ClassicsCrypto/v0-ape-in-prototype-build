@@ -1,0 +1,10 @@
+
+> my-v0-project@0.1.0 dev /home/jay/Documents/Prototype/v0-ape-in-prototype-build
+> next dev
+
+  ▲ Next.js 14.2.16
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1191ms

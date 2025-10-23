@@ -2,17 +2,19 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
-import { Upload, Mail, Twitter } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Upload, Mail, Twitter, Zap, CheckCircle, Wallet } from "lucide-react"
+import { ThirdwebSocialAuth } from "@/components/thirdweb-social-auth"
 
 export default function OnboardingPage() {
   const router = useRouter()
-  const [step, setStep] = useState<"method" | "details">("method")
+  const [step, setStep] = useState<"method" | "details" | "wallet">("method")
   const [authMethod, setAuthMethod] = useState<"email" | "twitter" | null>(null)
   const [formData, setFormData] = useState({
     name: "",
@@ -20,6 +22,29 @@ export default function OnboardingPage() {
     profileImage: null as File | null,
   })
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [isCreatingWallet, setIsCreatingWallet] = useState(false)
+  const [walletCreated, setWalletCreated] = useState(false)
+  const [xpEarned, setXpEarned] = useState(0)
+  const [isAuthenticating, setIsAuthenticating] = useState(false)
+
+  // Always start with social auth selection
+  // Reset state on component mount to ensure clean start
+  useEffect(() => {
+    // Clear any existing user data to ensure fresh onboarding
+    localStorage.removeItem("apeInUser")
+    setStep("method")
+    setAuthMethod(null)
+    setFormData({
+      name: "",
+      email: "",
+      profileImage: null,
+    })
+    setPreviewUrl(null)
+    setIsCreatingWallet(false)
+    setWalletCreated(false)
+    setXpEarned(0)
+    setIsAuthenticating(false)
+  }, [])
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -30,29 +55,7 @@ export default function OnboardingPage() {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Simulate account creation and store in localStorage
-    const userData = {
-      name: formData.name,
-      email: formData.email,
-      xp: 0,
-      authMethod,
-      profileImage: previewUrl,
-    }
-    localStorage.setItem("apeInUser", JSON.stringify(userData))
-    router.push("/profile")
-  }
 
-  const handleTwitterAuth = () => {
-    setAuthMethod("twitter")
-    setStep("details")
-  }
-
-  const handleEmailAuth = () => {
-    setAuthMethod("email")
-    setStep("details")
-  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -70,72 +73,61 @@ export default function OnboardingPage() {
         </div>
 
         {step === "method" ? (
-          /* Auth Method Selection */
-          <div className="space-y-4">
-            <Button
-              onClick={handleTwitterAuth}
-              size="lg"
-              className="w-full h-16 text-lg font-bold bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-            >
-              <Twitter className="mr-2 h-5 w-5" />
-              Continue with X
-            </Button>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border" />
+          /* Social Auth Selection */
+          <div className="space-y-6">
+            {/* Instructions */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-bold text-blue-800">Choose Your Sign-In Method</span>
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or</span>
+              <p className="text-xs text-blue-700 mb-3">
+                Select either Google or X to create your account. You can only choose one option.
+              </p>
+              <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-lg p-3">
+                <h3 className="text-sm font-bold mb-2 flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-primary" />
+                  Earn XP for Signing Up
+                </h3>
+                <div className="space-y-1 text-xs text-muted-foreground">
+                  <div className="flex justify-between">
+                    <span>Connect with Google or X</span>
+                    <span className="font-bold text-primary">+50 XP</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <Button
-              onClick={handleEmailAuth}
-              size="lg"
-              variant="outline"
-              className="w-full h-16 text-lg font-bold border-2 bg-transparent"
-            >
-              <Mail className="mr-2 h-5 w-5" />
-              Continue with Email
-            </Button>
+            {/* Thirdweb Social Auth */}
+            <ThirdwebSocialAuth 
+              onXpEarned={(xp) => {
+                setXpEarned(xp);
+              }}
+              onAuthSuccess={(method, userData) => {
+                setAuthMethod(method as "email" | "twitter");
+                setStep("details");
+              }}
+              forceShowButtons={true}
+            />
           </div>
-        ) : (
-          /* Profile Details Form */
+        ) : step === "details" ? (
+          /* Simple Profile Creation */
           <Card className="p-6 border-2">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Profile Image Upload */}
-              <div className="flex flex-col items-center space-y-4">
-                <div className="relative">
-                  {previewUrl ? (
-                    <img
-                      src={previewUrl || "/placeholder.svg"}
-                      alt="Profile preview"
-                      className="w-24 h-24 rounded-full object-cover border-4 border-primary"
-                    />
-                  ) : (
-                    <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center border-4 border-dashed border-border">
-                      <Upload className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                  )}
-                  <input
-                    type="file"
-                    id="profile-image"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
+            <div className="space-y-6">
+              {/* XP Reward Display */}
+              <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-lg p-4 text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Zap className="h-5 w-5 text-primary" />
+                  <span className="font-bold text-primary">Gain +50 XP</span>
                 </div>
-                <Label htmlFor="profile-image" className="cursor-pointer">
-                  <Button type="button" variant="outline" size="sm" asChild>
-                    <span>Upload Photo</span>
-                  </Button>
-                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Create your account to start earning XP
+                </p>
               </div>
 
               {/* Name Input */}
               <div className="space-y-2">
-                <Label htmlFor="name">Display Name</Label>
+                <Label htmlFor="name">Choose Your Name</Label>
                 <Input
                   id="name"
                   placeholder="Enter your name"
@@ -144,34 +136,111 @@ export default function OnboardingPage() {
                   required
                   className="h-12 text-lg"
                 />
+                <p className="text-xs text-muted-foreground">
+                  This name will be checked for availability
+                </p>
               </div>
 
-              {/* Email Input (only for email auth) */}
-              {authMethod === "email" && (
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    required
-                    className="h-12 text-lg"
-                  />
-                </div>
-              )}
-
               {/* Submit Button */}
-              <Button type="submit" size="lg" className="w-full h-12 text-lg font-bold pulse-glow">
-                Create Status Card
+              <Button 
+                onClick={async () => {
+                  // Simulate name check and account creation
+                  if (formData.name.trim()) {
+                    // Calculate XP earned
+                    let totalXp = 100 // Base XP for profile completion
+                    if (authMethod === "twitter") {
+                      totalXp += 50 // Extra XP for X connection
+                    }
+                    
+                    setXpEarned(totalXp)
+                    setStep("wallet")
+                    
+                    // Simulate smart wallet creation
+                    setIsCreatingWallet(true)
+                    
+                    // Simulate wallet creation delay
+                    await new Promise(resolve => setTimeout(resolve, 2000))
+                    
+                    // Generate a mock wallet address
+                    const mockWalletAddress = `0x${Math.random().toString(16).substr(2, 40)}`
+                    
+                    // Store user data with wallet info
+                    const userData = {
+                      name: formData.name,
+                      email: formData.email,
+                      xp: totalXp,
+                      authMethod,
+                      profileImage: previewUrl,
+                      walletAddress: mockWalletAddress,
+                      smartWalletCreated: true,
+                      createdAt: new Date().toISOString(),
+                    }
+                    
+                    localStorage.setItem("apeInUser", JSON.stringify(userData))
+                    setWalletCreated(true)
+                    setIsCreatingWallet(false)
+                    
+                    // Auto redirect after showing success
+                    setTimeout(() => {
+                      router.push("/profile")
+                    }, 3000)
+                  }
+                }}
+                size="lg" 
+                className="w-full h-12 text-lg font-bold pulse-glow"
+                disabled={!formData.name.trim()}
+              >
+                Create Account
               </Button>
 
               {/* Back Button */}
               <Button type="button" variant="ghost" size="sm" onClick={() => setStep("method")} className="w-full">
-                Back
+                Back to Sign-In Options
               </Button>
-            </form>
+            </div>
+          </Card>
+        ) : (
+          /* Account Creation Success */
+          <Card className="p-8 border-2">
+            <div className="text-center space-y-6">
+              {isCreatingWallet ? (
+                <>
+                  <div className="w-16 h-16 mx-auto border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                  <h3 className="text-xl font-bold">Creating Your Account</h3>
+                  <p className="text-muted-foreground">
+                    Setting up your account and profile...
+                  </p>
+                </>
+              ) : walletCreated ? (
+                <>
+                  <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
+                    <CheckCircle className="h-8 w-8 text-green-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-green-600">Account Created Successfully!</h3>
+                  <div className="space-y-4">
+                    <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-lg p-4">
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <Zap className="h-5 w-5 text-primary" />
+                        <span className="font-bold">XP Earned</span>
+                      </div>
+                      <div className="text-2xl font-black text-primary">+50 XP</div>
+                    </div>
+                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <CheckCircle className="h-5 w-5 text-blue-600" />
+                        <span className="font-bold text-blue-800">Account Ready</span>
+                      </div>
+                      <p className="text-sm text-blue-700">
+                        Your account is ready to start discovering and creating sparks
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Redirecting to your feed in 3 seconds...
+                  </p>
+                </>
+              ) : null}
+            </div>
           </Card>
         )}
       </div>

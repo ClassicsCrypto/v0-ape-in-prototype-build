@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Upload, Sparkles, ArrowLeft, ImageIcon, Video } from "lucide-react"
+import { xpSystem } from "@/lib/xp-system"
 import Link from "next/link"
 
 export default function SubmitSparkPage() {
@@ -41,6 +42,9 @@ export default function SubmitSparkPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
+    // Award XP for submitting idea
+    const xpGained = xpSystem.awardXP('SUBMIT_IDEA')
+
     // Create spark object
     const spark = {
       id: Date.now().toString(),
@@ -51,12 +55,17 @@ export default function SubmitSparkPage() {
       createdAt: new Date().toISOString(),
       hypes: 0,
       wipes: 0,
+      boostedXP: 0,
+      creatorId: 'current-user', // In real app, this would be the actual user ID
     }
 
     // Get existing sparks from localStorage
     const existingSparks = JSON.parse(localStorage.getItem("apeInSparks") || "[]")
     existingSparks.push(spark)
     localStorage.setItem("apeInSparks", JSON.stringify(existingSparks))
+
+    // Show success message with XP gained
+    alert(`Spark submitted successfully! You earned ${xpGained} XP.`)
 
     // Redirect to feed
     router.push("/feed")

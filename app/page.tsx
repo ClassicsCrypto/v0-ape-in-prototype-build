@@ -1,7 +1,34 @@
+"use client"
+
 import Link from "next/link"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { Zap, Users, TrendingUp } from "lucide-react"
 
 export default function HomePage() {
+  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    // Check if user already exists in localStorage
+    const userData = localStorage.getItem("apeInUser")
+    if (userData) {
+      // User already exists, redirect to profile
+      router.push("/profile")
+      return
+    }
+    setIsLoading(false)
+  }, [router])
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Animated background gradient */}
@@ -20,7 +47,7 @@ export default function HomePage() {
 
         {/* Value prop */}
         <p className="text-lg md:text-xl text-foreground/80 max-w-lg mx-auto text-balance">
-          Discover, curate, and fund the next wave of Web3 culture. Swipe to find viral concepts before they blow up.
+          Discover, create, and predict the next wave of Web3 culture. Swipe to find viral ideas and benefit when they blow up.
         </p>
 
         {/* CTA buttons */}
@@ -39,6 +66,28 @@ export default function HomePage() {
               Explore Feed
             </Button>
           </Link>
+        </div>
+
+        {/* XP Benefits */}
+        <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-lg p-6 max-w-lg mx-auto">
+          <h3 className="text-lg font-bold mb-4 flex items-center justify-center gap-2">
+            <Zap className="h-5 w-5 text-primary" />
+            Earn XP for Every Action
+          </h3>
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <div className="flex justify-between">
+              <span>Sign up with Email or X</span>
+              <span className="font-bold text-primary">+50 XP</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Complete Profile</span>
+              <span className="font-bold text-primary">+100 XP</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Submit Your First Spark</span>
+              <span className="font-bold text-accent">+200 XP</span>
+            </div>
+          </div>
         </div>
 
         {/* Stats */}

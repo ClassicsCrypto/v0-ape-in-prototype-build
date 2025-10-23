@@ -3,6 +3,8 @@ import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import "./globals.css"
+import { ThirdWebProvider } from "@/components/thirdweb-provider"
+import { QueryClientProviderWrapper } from "@/components/query-client-provider"
 
 export const metadata: Metadata = {
   title: "ApeIn - Hype the next big IP",
@@ -17,7 +19,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`dark ${GeistSans.variable} ${GeistMono.variable}`}>
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        <QueryClientProviderWrapper>
+          <ThirdWebProvider>
+            {children}
+          </ThirdWebProvider>
+        </QueryClientProviderWrapper>
+      </body>
     </html>
   )
 }
